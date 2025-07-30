@@ -30,7 +30,7 @@
 
 1. **克隆项目**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/Queen-8/LLMretrieval.git
    cd llm_retrieval
    ```
 
@@ -54,7 +54,7 @@
 5. **准备本地知识库**
    - 将 PDF 文档放入 `Local_knowledge_base/` 目录。
 
-6. **（可选）安装并启动 Ollama**
+6. **安装并启动 Ollama**
    - 参考 [Ollama 官方文档](https://ollama.com/) 安装并拉取所需模型，如：
      ```bash
      ollama pull deepseek-r1:8b
