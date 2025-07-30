@@ -1,6 +1,4 @@
----
 
-```markdown
 # LangChain Agentic AI - 端云协同RAG智能助理系统
 
 ## 项目简介
