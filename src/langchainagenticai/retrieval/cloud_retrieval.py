@@ -1,56 +1,59 @@
-import sys  # 确保导入 sys 模块
 import logging
-import requests
-from langchain_openai import ChatOpenAI
-from langchainagenticai.utils.base_retrieval import split_documents, build_index, recall_documents, rerank_documents
+from sentence_transformers import CrossEncoder
+from langchain.chat_models import ChatOpenAI
+from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain.schema import Document
 
-# 将项目根目录添加到 sys.path
-project_root = os.path.abspath(os.path.join(os.getcwd(), "../../.."))  # 跳出 src/langchainAgenticAi/retrieval
-sys.path.append(project_root)
-
-# 配置日志
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def cloud_retrieve(query, cloud_urls, api_key):
+def recall_documents(query: str, index, k=5, filter_func=None):
     """
-    使用云端 URL 数组进行文档检索，API 密钥从前端传递。
+    从指定向量索引中召回文档
     """
-    documents = []
-    for url in cloud_urls:
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                documents.append(response.text)
-            else:
-                logger.warning(f"无法从 {url} 获取文档，状态码：{response.status_code}")
-        except Exception as e:
-            logger.error(f"从 {url} 获取文档时出错：{str(e)}")
+    docs = index.similarity_search(query, k=k)
+    
+    if filter_func:
+        docs = [doc for doc in docs if filter_func(doc)]
+    
+    return docs
 
-    if not documents:
-        logger.error("没有从云端检索到文档。")
-        return []
-
-    # 分片、构建索引并进行检索
-    split_docs = split_documents(documents)
-    index = build_index(split_docs)
-    results = recall_documents(query, index)
-    ranked_results = rerank_documents(results, query)
-    return ranked_results
-
-def call_cloud_model(results, api_key):
+def rerank(query, retrieved_docs, top_k: int):
     """
-    调用云端 OpenAI 模型进行推理，API 密钥由前端传递。
+    使用 CrossEncoder 对召回的文档片段进行重排
     """
-    model = ChatOpenAI(
-        model="openai/gpt-4o-mini",
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
+    retrieved_chunks = [doc.page_content for doc in retrieved_docs]
+    pairs = [(query, chunk) for chunk in retrieved_chunks]
+    
+    cross_encoder = CrossEncoder('cross-encoder/mmarco-mMiniLMv2-L12-H384-v1')
+    scores = cross_encoder.predict(pairs)
+    
+    scored_chunks = list(zip(retrieved_chunks, scores))
+    scored_chunks.sort(key=lambda x: x[1], reverse=True)
+    
+    return [chunk for chunk, _ in scored_chunks][:top_k]
+
+def generate_answer_openai(query, reranked_chunks, api_key, model_name="gpt-3.5-turbo"):
+    """
+    基于重排后的 chunks 和 OpenRouter API 生成答案
+    """
+    documents_content = "\n".join(reranked_chunks)
+    
+    prompt = (
+        "你是一个智能助手，请根据以下内容回答用户问题：\n\n"
+        f"{documents_content}\n\n用户提问：{query}\n\n请用简洁准确的语言作答："
     )
-    input_text = "\n".join([doc.page_content for doc in results])
+    
+    # 使用 OpenRouter API
+    llm = ChatOpenAI(
+        model=model_name, 
+        openai_api_key=api_key,
+        openai_api_base="https://openrouter.ai/api/v1",
+        temperature=0.7
+    )
+    
     try:
-        response = model.invoke(input_text)
-        return response['choices'][0]['text'].strip()
+        response = llm.invoke(prompt)
+        return response.content.strip()
     except Exception as e:
-        logger.error(f"调用云端模型时出错：{e}")
-        return "⚠️ 云端模型调用失败"
+        logger.error(f"生成答案出错: {e}")
+        return None
