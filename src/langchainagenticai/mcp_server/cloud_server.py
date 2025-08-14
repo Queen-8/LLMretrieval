@@ -1,9 +1,13 @@
-# cloud_server.py
+# cloud_server.py 
+import os
+os.environ.setdefault("USER_AGENT", "LangChain-AgenticAI/1.0 (contact: 564752114@qq.com)")
+
 from mcp.server.fastmcp import FastMCP
 import logging
 import os
 import sys
 from pathlib import Path
+from langchain_openai import ChatOpenAI
 
 # 添加项目根目录到 Python 路径
 project_root = Path(__file__).parent.parent.parent.parent
@@ -22,14 +26,28 @@ conversation_history = []
 index = None
 
 
-@mcp.tool(name="cloud_answer_question", description="Answer questions from cloud URL documents")
-async def cloud_answer_question(query: str) -> str:
+@mcp.tool(
+    name="cloud_answer_question", 
+    description=(
+        "用途：回答与云端 URL 文档、网页文章、公司在线知识库、互联网数据相关的问题。"
+        "适合场景：当用户的问题涉及在线内容、外部数据、网页文章、网络新闻等。"
+        "输入：JSON 格式，包含 query 字段，例如：{{\"query\": \"用户问题\"}}"
+        "限制：如果问题明确与本地资料相关，请不要使用本工具。"
+    )
+)
+async def cloud_answer_question(input_data: dict) -> str:
     """
     从云端 URL 文档中检索内容并回答用户问题，支持多轮对话上下文
     """
     global index, conversation_history
 
     try:
+        # 处理输入参数
+        if isinstance(input_data, dict) and "query" in input_data:
+            query = input_data["query"]
+        else:
+            return "❌ 参数格式错误，期望包含 query 字段的字典"
+        
         logging.info(f"🌐 收到云端查询: {query}")
 
         # 如果索引未初始化，先初始化

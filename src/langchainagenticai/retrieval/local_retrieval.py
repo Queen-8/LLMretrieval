@@ -7,11 +7,11 @@ from ollama import Client
 # from langchainagenticai.utils.base_retrieval import split_documents, build_index, recall_documents, rerank_documents
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chat_models import ChatOllama
+# from langchain.chat_models import ChatOllama
 from sentence_transformers import CrossEncoder
 # from langchain_ollama import ChatOllama
 from langchain_community.chat_models import ChatOllama
-from langchain.chat_models import ChatOllama
+from src.langchainagenticai.utils.loaddocs import init_retrieval_pipeline  # 用loaddocs.py
 # 将项目根目录添加到 sys.path
 project_root = os.path.abspath(os.path.join(os.getcwd(), "../../.."))  # 跳出 src/langchainAgenticAi/retrieval
 sys.path.append(project_root)
@@ -21,10 +21,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # 全局缓存
 index = None
-
-
-from src.langchainagenticai.utils.loaddocs import init_retrieval_pipeline  # 用loaddocs.py
-
 
 
 def get_index():

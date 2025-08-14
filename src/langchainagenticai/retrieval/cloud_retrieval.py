@@ -1,6 +1,8 @@
 import logging
 from sentence_transformers import CrossEncoder
-from langchain.chat_models import ChatOpenAI
+# from langchain.chat_models import ChatOpenAI  弃用
+from langchain_openai import ChatOpenAI
+# from langchain_community.chat_models import ChatOpenAI 弃用
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain.schema import Document
 

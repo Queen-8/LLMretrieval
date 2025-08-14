@@ -30,7 +30,7 @@ class LoadStreamlitUI:
                 st.info("🔑 API Key 将从环境变量读取")
             elif self.user_controls["selected_llm"] == 'ollama':
                 model_options = self.config.get_ollama_model_options()
-                default_model = "deepseek-r1:8b" if "deepseek-r1:8b" in model_options else model_options[0]
+                default_model = "llama3.1:8b" if "llama3.1:8b" in model_options else model_options[0]
                 self.user_controls["selected_model"] = st.selectbox("Select Model", model_options, index=model_options.index(default_model), key="ollama_model_selectbox")
                 # ollama 本地模型一般不需要 API Key，可根据实际需求添加
             # 完全移除 usecase 相关内容

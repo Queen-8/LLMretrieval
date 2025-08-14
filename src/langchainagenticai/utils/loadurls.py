@@ -42,7 +42,7 @@ def fetch_url_content(urls):
     return all_documents
 
 
-def split_documents(documents, chunk_size=1000, overlap=100):
+def split_documents(documents, chunk_size=800, overlap=120):
     """对网页文档进行分片"""
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
     return text_splitter.split_documents(documents)
